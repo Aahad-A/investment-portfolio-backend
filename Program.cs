@@ -1,6 +1,6 @@
 using System.Linq;
 using System.Text.Json;
-
+using System.Text.Json.Serialization;
 using final_project_back_end_Aahad_A;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +19,7 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod();
     });
 });
+
 
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("BasicAuthentication")
@@ -71,86 +72,182 @@ app.UseAuthorization();
 app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 
+// app.MapGet("/initialize", () =>
+// {
+
+//     var options = new JsonSerializerOptions
+//     {
+//         PropertyNameCaseInsensitive = true
+//     };
+
+//     using (var context = new PortfolioContext())
+//     {
+//         context.Database.EnsureDeleted();
+//         context.Database.EnsureCreated();
+
+//         // ADDING HARDCODED INITIAL LOGIN CREDS
+//         var starter = new Login("aahad", "password");
+//         context.Logins.Add(starter);
+//         context.SaveChanges();
+//         context.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
+
+//         // ADDING HARDCODED INITIAL PORTFOLIO 
+//         var techPortfolio = new Portfolio
+//         {
+//             PortfolioId = 1,
+//             LoginId = starter.Id,
+//             Name = "Tech Portfolio",
+//             Investments = new List<Investment>
+//             {
+//                 new Investment
+//                 {
+//                     InvestmentId = 1,
+//                     Name = "Apple Inc.",
+//                     Ticker = "AAPL",
+//                     Quantity = 10,
+//                     PurchasePrice = 150
+//                 },
+//                 new Investment
+//                 {
+//                     InvestmentId = 2,
+//                     Name = "Microsoft Corp.",
+//                     Ticker = "MSFT",
+//                     Quantity = 5,
+//                     PurchasePrice = 200
+//                 }
+//             }
+//         };
+
+//         context.Portfolios.Add(techPortfolio);
+//         context.SaveChanges();
+//         context.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
+//     }
+
+// }).WithName("Init").WithOpenApi();
+
 app.MapGet("/initialize", () => {
-
-    // using (var context = new RecipeContext())
-    // {
-    //     context.Database.EnsureDeleted();
-    //     context.Database.EnsureCreated();
-    // }
-
-    using (var loginContext = new LoginContext())
-    {
-        loginContext.Database.EnsureDeleted();
-        loginContext.Database.EnsureCreated();
-    }
 
     var options = new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true
     };
-    // string titleJson = File.ReadAllText("recipeTitleData.json");
-    // RecipeTitle[]? titles = JsonSerializer.Deserialize<RecipeTitle[]>(titleJson, options);
 
-    // string ingredientJson = File.ReadAllText("recipeIngredientsData.json");
-    // RecipeIngredients[]? ingredients = JsonSerializer.Deserialize<RecipeIngredients[]>(ingredientJson, options);
-
-    //Adding new data to tables
-    // using (var context = new RecipeContext())
-    // {
-    //     //Create Recipe Titles
-    //     foreach (var title in titles)
-    //     {
-    //         context.RecipeTitles.Add(title);
-    //     }
-
-    //     context.SaveChanges();
-        
-
-    //     //Loop through titles and assign id to recipe review
-    //     List<RecipeTitle> fromdb = context.RecipeTitles.ToList();
-    //     foreach(var item in fromdb)
-    //     {
-    //         //updating recipeReview to have the recipeTItle id association
-    //         foreach(var review in context.RecipeReviews.ToList())
-    //         {
-    //             if(review.Id == item.Id)
-    //             {
-    //                 review.RecipeId = item.Id;
-    //                 item.Review = review;
-    //                 break;
-    //             }
-    //             continue;
-    //         }
-
-    //         //updating ingredients to have recipeTitle id association
-    //         //RecipeTitle r = context.RecipeTitles.FirstOrDefault(rt => rt.Title == item.Title);
-    //         List<RecipeIngredients> matched = ingredients.Where(ingredient => ingredient.RecipeTitle.ToLower() == item.Title.ToLower()).ToList();
-    //         foreach (var ingredient in matched)
-    //         {
-    //             ingredient.RecipeId = item.Id;
-    //             context.RecipeIngredients.Add(ingredient);
-    //         }
-
-            
-    //     }
-
-    //     context.SaveChanges();
-    //     context.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
-    // }
-
-    using(var loginContext = new LoginContext())
+    Login starter;
+    using (var loginContext = new LoginContext())
     {
-        Login starter = new Login("brian", "password");
+        loginContext.Database.EnsureDeleted();
+        loginContext.Database.EnsureCreated();
+
+        // ADDING HARDCODED INITIAL LOGIN CREDS
+        starter = new Login("aahad", "password");
         loginContext.Logins.Add(starter);
         loginContext.SaveChanges();
-        loginContext.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
     }
-    
+
+    using (var portfolioContext = new PortfolioContext())
+    {
+        portfolioContext.Database.EnsureDeleted();
+        portfolioContext.Database.EnsureCreated();
+    }
+    // ADDING HARDCODED INITIAL PORTFOLIO 
+
+    using (var portfolioContext = new PortfolioContext())
+    {
+        var techPortfolio = new Portfolio
+        {
+            PortfolioId = 1,
+            Name = "Tech Portfolio",
+            Investments = new List<Investment>
+            {
+                new Investment
+                {
+                    InvestmentId = 1,
+                    Name = "Apple Inc.",
+                    Ticker = "AAPL",
+                    Quantity = 10,
+                    PurchasePrice = 150
+                },
+                new Investment
+                {
+                    InvestmentId = 2,
+                    Name = "Microsoft Corp.",
+                    Ticker = "MSFT",
+                    Quantity = 5,
+                    PurchasePrice = 200
+                }
+            }
+        };
+        var healthPortfolio = new Portfolio
+        {
+            PortfolioId = 2,
+            Name = "Health Portfolio",
+            Investments = new List<Investment>
+            {
+                new Investment
+                {
+                    InvestmentId = 3,
+                    Name = "Pfizer Inc.",
+                    Ticker = "PFE",
+                    Quantity = 10,
+                    PurchasePrice = 40
+                },
+                new Investment
+                {
+                    InvestmentId = 4,
+                    Name = "Johnson & Johnson",
+                    Ticker = "JNJ",
+                    Quantity = 5,
+                    PurchasePrice = 150
+                }
+            }
+        };
+
+        portfolioContext.Portfolios.Add(techPortfolio);
+        portfolioContext.Portfolios.Add(healthPortfolio);
+        foreach (var investment in techPortfolio.Investments)
+        {
+            Console.WriteLine($"Adding investment {investment.InvestmentId} to tech portfolio");
+            portfolioContext.Investments.Add(investment);
+        }
+        foreach (var investment in healthPortfolio.Investments)
+        {
+            Console.WriteLine($"Adding investment {investment.InvestmentId} to health portfolio");
+            portfolioContext.Investments.Add(investment);
+        }
+        portfolioContext.SaveChanges();
+        portfolioContext.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
+    }
+
+
 }).WithName("Init").WithOpenApi();
 
+app.MapGet("/portfolios", () =>
+{
+    using (var context = new PortfolioContext())
+    {
+        var portfolios = context.Portfolios.Include(p => p.Investments).ToList();
+        return Results.Ok(portfolios);
+    }
+}).WithName("GetAllPortfolios").WithOpenApi();
+
+app.MapGet("/portfolios/{LoginId}", (int id) =>
+{
+    Console.WriteLine("Executing Get Portfolio: " + DateTime.Now.ToShortTimeString());
+    using (var context = new PortfolioContext())
+    {
+        var portfolio = context.Portfolios.FirstOrDefault(p => p.PortfolioId == id);
+        if (portfolio == null)
+        {
+            return Results.NotFound();
+        }
+        return Results.Ok(portfolio);
+    }
+}).WithName("GetUserPortfolio").WithOpenApi();
+
+// ---------------------------------------- NEW USER
 app.MapPost("/newUser", (Login newUser) =>{
-    using(var context = new LoginContext())
+    Console.WriteLine("Executing New UserCreation: " + DateTime.Now.ToShortTimeString());
+    using (var context = new LoginContext())
     {
         context.Logins.Add(newUser);
         context.SaveChanges();
@@ -159,6 +256,7 @@ app.MapPost("/newUser", (Login newUser) =>{
     return Results.Created($"/newUser/{newUser.Id}", newUser);
 }).WithName("PostLogin").WithOpenApi();
 
+// ----------------------------------------------------------- LOGIN EXISTING USER
 app.MapPost("/login", (Login authenticatedUser) => {
     Console.WriteLine("Executing login: " + DateTime.Now.ToShortTimeString());
     using(var context = new LoginContext())
@@ -179,6 +277,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
+    Console.WriteLine("Executing Weather: " + DateTime.Now.ToShortTimeString());
     var forecast =  Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (

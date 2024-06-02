@@ -10,6 +10,7 @@ public class Login
     public string Password { get; set; }
     public string base64Credentials { get; set; }
     public string hash { get; set; }
+    public List<Portfolio>? Portfolios { get; set; }
 
     public Login(string username, string password)
     {

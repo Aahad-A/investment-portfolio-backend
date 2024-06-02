@@ -4,3 +4,5 @@ GET {{final_project_back_end_Aahad_A_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+GET {{final_project_back_end_Aahad_A_HostAddress}}/portfolios/
+Accept: application/json

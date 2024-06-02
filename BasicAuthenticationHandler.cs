@@ -41,7 +41,7 @@ namespace final_project_back_end_Aahad_A
                 //byte[] creds = base64Credentials//Encoding.UTF8.GetBytes(base64Credentials);
                 using (SHA256 sha256Hash = SHA256.Create())
                 {
-                    byte[] bytes = sha256Hash.ComputeHash(credentialBytes);
+                    byte[] bytes = sha256Hash.ComputeHash(credentialBytes)  ;
                     StringBuilder builder = new StringBuilder();
                     for (int i = 0; i < bytes.Length; i++)
                     {

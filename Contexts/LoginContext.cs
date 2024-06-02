@@ -6,6 +6,6 @@ public class LoginContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite("Data Source=LoginDb.db");
+        optionsBuilder.UseSqlite("Data Source=Databases/LoginDb.db");
     }
 }
