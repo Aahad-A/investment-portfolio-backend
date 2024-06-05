@@ -204,20 +204,9 @@ app.MapGet("/initialize", () => {
 
         portfolioContext.Portfolios.Add(techPortfolio);
         portfolioContext.Portfolios.Add(healthPortfolio);
-        foreach (var investment in techPortfolio.Investments)
-        {
-            Console.WriteLine($"Adding investment {investment.InvestmentId} to tech portfolio");
-            portfolioContext.Investments.Add(investment);
-        }
-        foreach (var investment in healthPortfolio.Investments)
-        {
-            Console.WriteLine($"Adding investment {investment.InvestmentId} to health portfolio");
-            portfolioContext.Investments.Add(investment);
-        }
         portfolioContext.SaveChanges();
         portfolioContext.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
     }
-
 
 }).WithName("Init").WithOpenApi();
 
@@ -230,19 +219,89 @@ app.MapGet("/portfolios", () =>
     }
 }).WithName("GetAllPortfolios").WithOpenApi();
 
-app.MapGet("/portfolios/{LoginId}", (int id) =>
+app.MapPost("/portfolios", async (Portfolio newPortfolio) =>
 {
-    Console.WriteLine("Executing Get Portfolio: " + DateTime.Now.ToShortTimeString());
     using (var context = new PortfolioContext())
     {
-        var portfolio = context.Portfolios.FirstOrDefault(p => p.PortfolioId == id);
-        if (portfolio == null)
+        context.Portfolios.Add(newPortfolio);
+        await context.SaveChangesAsync();
+
+        return Results.Created($"/portfolios/{newPortfolio.PortfolioId}", newPortfolio);
+    }
+}).WithName("CreatePortfolio").WithOpenApi().RequireAuthorization();
+
+app.MapPost("/investments", async (Investment newInvestment) =>
+{
+    using (var context = new PortfolioContext())
+    {
+        context.Investments.Add(newInvestment);
+        await context.SaveChangesAsync();
+
+        return Results.Created($"/investments/{newInvestment.InvestmentId}", newInvestment);
+    }
+}).WithName("CreateInvestment").WithOpenApi().RequireAuthorization();
+
+// app.MapGet("/portfolios/{LoginId}", (int id) =>
+// {
+//     Console.WriteLine("Executing Get Portfolio: " + DateTime.Now.ToShortTimeString());
+//     using (var context = new PortfolioContext())
+//     {
+//         var portfolio = context.Portfolios.FirstOrDefault(p => p.PortfolioId == id);
+//         if (portfolio == null)
+//         {
+//             return Results.NotFound();
+//         }
+//         return Results.Ok(portfolio);
+//     }
+// }).WithName("GetUserPortfolio").WithOpenApi();
+
+app.MapPost("/purchase", async (InvestmentUpdate update) =>
+{
+    using (var context = new PortfolioContext())
+    {
+        var investment = await context.Investments.FindAsync(update.InvestmentId);
+        if (investment == null)
         {
             return Results.NotFound();
         }
-        return Results.Ok(portfolio);
+
+        // Update the investment
+        investment.Quantity += update.Quantity;
+        investment.PurchasePrice = update.Price;
+
+        // Save the changes
+        await context.SaveChangesAsync();
+
+        return Results.Ok(investment);
     }
-}).WithName("GetUserPortfolio").WithOpenApi();
+}).WithName("PurchaseInvestment").WithOpenApi().RequireAuthorization(new AuthorizeAttribute() { AuthenticationSchemes = "BasicAuthentication" });
+
+app.MapPut("/sell", async (InvestmentUpdate update) =>
+{
+    using (var context = new PortfolioContext())
+    {
+        var investment = await context.Investments.FindAsync(update.InvestmentId);
+        if (investment == null)
+        {
+            return Results.NotFound();
+        }
+
+        // Check if the quantity to sell is more than the quantity owned
+        if (update.Quantity > investment.Quantity)
+        {
+            return Results.BadRequest("Quantity to sell cannot be more than quantity owned");
+        }
+
+        // Update the investment
+        investment.Quantity -= update.Quantity;
+        investment.PurchasePrice = update.Price;
+
+        // Save the changes
+        await context.SaveChangesAsync();
+
+        return Results.Ok(investment);
+    }
+}).WithName("SellInvestment").WithOpenApi();
 
 // ---------------------------------------- NEW USER
 app.MapPost("/newUser", (Login newUser) =>{
@@ -270,30 +329,7 @@ app.MapPost("/login", (Login authenticatedUser) => {
 }).WithName("Login").WithOpenApi().RequireAuthorization(new AuthorizeAttribute() {AuthenticationSchemes="BasicAuthentication"});
 
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    Console.WriteLine("Executing Weather: " + DateTime.Now.ToShortTimeString());
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+
