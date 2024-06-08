@@ -303,6 +303,31 @@ app.MapPut("/sell", async (InvestmentUpdate update) =>
     }
 }).WithName("SellInvestment").WithOpenApi();
 
+app.MapDelete("/portfolios/{portfolioId}", async (int portfolioId) =>
+{
+    Console.WriteLine("Executing Delete Portfolio on " + portfolioId + " at " + DateTime.Now.ToShortTimeString());
+    using (var context = new PortfolioContext())
+    {
+        var portfolio = await context.Portfolios.Include(p => p.Investments)
+                                                .FirstOrDefaultAsync(p => p.PortfolioId == portfolioId);
+        if (portfolio == null)
+        {   
+            return Results.NotFound();
+        }
+
+        // Remove all investments associated with the portfolio
+        context.Investments.RemoveRange(portfolio.Investments);
+
+        // Remove the portfolio
+        context.Portfolios.Remove(portfolio);
+
+        // Save the changes
+        await context.SaveChangesAsync();
+
+        return Results.Ok(portfolio);
+    }
+}).WithName("DeletePortfolio").WithOpenApi();
+
 // ---------------------------------------- NEW USER
 app.MapPost("/newUser", (Login newUser) =>{
     Console.WriteLine("Executing New UserCreation: " + DateTime.Now.ToShortTimeString());
@@ -324,7 +349,9 @@ app.MapPost("/login", (Login authenticatedUser) => {
         if(user == null){
             return Results.NotFound();
         }
+        Console.WriteLine("User found: " + user.Username);
         return Results.Ok(user);
+
     }
 }).WithName("Login").WithOpenApi().RequireAuthorization(new AuthorizeAttribute() {AuthenticationSchemes="BasicAuthentication"});
 
